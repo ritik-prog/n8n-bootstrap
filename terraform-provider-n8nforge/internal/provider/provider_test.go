@@ -10,10 +10,10 @@ func TestBootstrapArgsIncludeApiKeyLabel(t *testing.T) {
 	if label != "" {
 		args = append(args, "--api-key-label", label)
 	}
-	if len(args) != 7 {
-		t.Fatalf("expected 7 args, got %d: %v", len(args), args)
+	if len(args) != 8 {
+		t.Fatalf("expected 8 args, got %d: %v", len(args), args)
 	}
-	if args[6] != "ci-deploy" {
+	if args[7] != "ci-deploy" {
 		t.Fatalf("expected api key label arg, got %v", args)
 	}
 }
