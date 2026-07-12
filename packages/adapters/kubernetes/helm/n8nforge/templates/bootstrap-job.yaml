@@ -1,0 +1,65 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "n8nforge.fullname" . }}-bootstrap
+  labels:
+    {{- include "n8nforge.labels" . | nindent 4 }}
+    app.kubernetes.io/component: bootstrap
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "10"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        {{- include "n8nforge.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: bootstrap
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: bootstrap
+          image: "{{ .Values.image.sidecar.repository }}:{{ .Values.image.sidecar.tag }}"
+          env:
+            - name: N8NFORGE_PHASE
+              value: post-boot
+            - name: N8NFORGE_MANIFEST
+              value: /config/n8nforge.yaml
+            - name: N8NFORGE_STATE_DIR
+              value: /state
+            - name: N8NFORGE_TIMEOUT_MS
+              value: "180000"
+            - name: N8NFORGE_INSTANCE_URL
+              value: "http://{{ include "n8nforge.fullname" . }}:{{ .Values.service.port }}"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "n8nforge.fullname" . }}-secrets
+                  key: DB_POSTGRESDB_PASSWORD
+            - name: N8N_OWNER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "n8nforge.fullname" . }}-secrets
+                  key: N8N_OWNER_PASSWORD
+            - name: N8N_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "n8nforge.fullname" . }}-secrets
+                  key: N8N_ENCRYPTION_KEY
+            - name: N8N_USER_MANAGEMENT_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "n8nforge.fullname" . }}-secrets
+                  key: N8N_USER_MANAGEMENT_JWT_SECRET
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: state
+              mountPath: /state
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "n8nforge.fullname" . }}-manifest
+        - name: state
+          emptyDir: {}

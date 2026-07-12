@@ -1,0 +1,58 @@
+# Kubernetes local example
+#
+# Prerequisites: kubectl, helm, kind (or minikube)
+#
+# 1. Generate secrets:
+#    openssl rand -hex 32  # encryption key
+#    openssl rand -base64 48  # jwt secret
+#
+# 2. Hash owner password:
+#    n8nforge bootstrap --phase pre-boot -f n8nforge.yaml
+#    # copy N8N_INSTANCE_OWNER_PASSWORD_HASH from .n8nforge/generated.env
+#
+# 3. Install:
+#    helm upgrade --install n8nforge \
+#      ../../../packages/adapters/kubernetes/helm/n8nforge \
+#      --set owner.email=admin@example.com \
+#      --set owner.password=YourPassword1! \
+#      --set owner.passwordHash=<bcrypt-hash> \
+#      --set secrets.encryptionKey=<64-hex> \
+#      --set secrets.jwtSecret=<jwt-secret> \
+#      --set database.password=<db-password> \
+#      --set n8n.host=n8n.local
+
+apiVersion: n8nforge/v1
+instance:
+  name: k8s-local
+  n8nVersion: "2.17.0"
+  host: n8n.local
+  protocol: http
+  port: 5678
+
+owner:
+  email: admin@example.com
+  firstName: Admin
+  lastName: User
+  password:
+    source: env:N8N_OWNER_PASSWORD
+
+secrets:
+  encryptionKey:
+    source: env:N8N_ENCRYPTION_KEY
+  jwtSecret:
+    source: env:N8N_USER_MANAGEMENT_JWT_SECRET
+
+database:
+  engine: postgres
+  host: n8nforge-postgres
+  password:
+    source: env:POSTGRES_PASSWORD
+
+apiKeys:
+  - label: ci-deploy
+    scopes: [workflow:read, workflow:update]
+    output:
+      destination: stdout
+
+provider:
+  type: kubernetes

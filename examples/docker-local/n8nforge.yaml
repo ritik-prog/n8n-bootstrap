@@ -1,0 +1,45 @@
+apiVersion: n8nforge/v1
+instance:
+  name: local
+  n8nVersion: "2.17.0"
+  host: localhost
+  port: 5678
+  protocol: http
+  timezone: UTC
+
+owner:
+  email: admin@example.com
+  firstName: Admin
+  lastName: User
+  password:
+    source: env:N8N_OWNER_PASSWORD
+
+secrets:
+  encryptionKey:
+    source: generate
+  jwtSecret:
+    source: generate
+
+database:
+  engine: postgres
+  host: postgres
+  port: 5432
+  database: n8n
+  user: n8n
+  schema: public
+  password:
+    source: env:POSTGRES_PASSWORD
+
+apiKeys:
+  - label: ci-deploy
+    scopes:
+      - workflow:read
+      - workflow:update
+      - workflow:activate
+    expiresInDays: 365
+    output:
+      destination: file
+      path: .n8nforge/api-keys/ci-deploy.txt
+
+provider:
+  type: docker

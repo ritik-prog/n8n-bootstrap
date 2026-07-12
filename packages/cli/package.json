@@ -1,0 +1,26 @@
+{
+  "name": "n8nforge",
+  "version": "0.1.0",
+  "description": "CLI for n8n bootstrap and provisioning",
+  "license": "Apache-2.0",
+  "type": "module",
+  "bin": {
+    "n8nforge": "./dist/cli.js"
+  },
+  "main": "./dist/cli.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/cli.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@n8nforge/core": "workspace:*",
+    "commander": "^13.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}

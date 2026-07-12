@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "n8nforge.fullname" . }}-manifest
+  labels:
+    {{- include "n8nforge.labels" . | nindent 4 }}
+data:
+  n8nforge.yaml: |
+    apiVersion: n8nforge/v1
+    instance:
+      name: {{ .Release.Name }}
+      n8nVersion: {{ .Values.image.n8n.tag | quote }}
+      host: {{ .Values.n8n.host | quote }}
+      port: {{ .Values.service.port }}
+      protocol: {{ .Values.n8n.protocol | quote }}
+      timezone: {{ .Values.n8n.timezone | quote }}
+    owner:
+      email: {{ .Values.owner.email | quote }}
+      firstName: {{ .Values.owner.firstName | quote }}
+      lastName: {{ .Values.owner.lastName | quote }}
+      password:
+        source: env:N8N_OWNER_PASSWORD
+    secrets:
+      encryptionKey:
+        source: env:N8N_ENCRYPTION_KEY
+      jwtSecret:
+        source: env:N8N_USER_MANAGEMENT_JWT_SECRET
+    database:
+      engine: postgres
+      host: {{ include "n8nforge.dbHost" . | quote }}
+      port: {{ .Values.database.port }}
+      database: {{ .Values.database.name | quote }}
+      user: {{ .Values.database.user | quote }}
+      password:
+        source: env:POSTGRES_PASSWORD
+    apiKeys:
+    {{- range .Values.apiKeys }}
+      - label: {{ .label | quote }}
+        scopes: {{ .scopes | toJson }}
+        {{- if .expiresInDays }}
+        expiresInDays: {{ .expiresInDays }}
+        {{- end }}
+        output:
+          destination: stdout
+    {{- end }}
+    provider:
+      type: kubernetes

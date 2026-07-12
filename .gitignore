@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.n8nforge/
+*.env
+!*.env.example
+.env.local
+.DS_Store
+coverage/
+*.log
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+terraform-provider-n8nforge/bin/

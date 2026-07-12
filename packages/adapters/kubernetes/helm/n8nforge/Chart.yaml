@@ -1,0 +1,13 @@
+apiVersion: v2
+name: n8nforge
+description: Production n8n bootstrap Helm chart with init Job pattern
+type: application
+version: 0.1.0
+appVersion: "2.17.0"
+keywords:
+  - n8n
+  - automation
+  - bootstrap
+maintainers:
+  - name: n8nforge
+    url: https://github.com/n8nforge/n8nforge

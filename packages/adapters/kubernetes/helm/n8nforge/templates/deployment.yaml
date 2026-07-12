@@ -1,0 +1,123 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "n8nforge.fullname" . }}
+  labels:
+    {{- include "n8nforge.labels" . | nindent 4 }}
+    app.kubernetes.io/component: n8n
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "n8nforge.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: n8n
+  template:
+    metadata:
+      labels:
+        {{- include "n8nforge.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: n8n
+    spec:
+      {{- if .Values.database.internal }}
+      initContainers:
+        - name: wait-for-postgres
+          image: postgres:16-alpine
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h {{ include "n8nforge.dbHost" . }} -U {{ .Values.database.user }} -d {{ .Values.database.name }}; do
+                echo "waiting for postgres"; sleep 2;
+              done
+      {{- end }}
+      containers:
+        - name: n8n
+          image: "{{ .Values.image.n8n.repository }}:{{ .Values.image.n8n.tag }}"
+          imagePullPolicy: {{ .Values.image.n8n.pullPolicy }}
+          ports:
+            - containerPort: 5678
+          env:
+            - name: GENERIC_TIMEZONE
+              value: {{ .Values.n8n.timezone | quote }}
+            - name: TZ
+              value: {{ .Values.n8n.timezone | quote }}
+            - name: N8N_HOST
+              value: {{ .Values.n8n.host | quote }}
+            - name: N8N_PORT
+              value: {{ .Values.service.port | quote }}
+            - name: N8N_PROTOCOL
+              value: {{ .Values.n8n.protocol | quote }}
+            - name: WEBHOOK_URL
+              value: {{ printf "%s://%s/" .Values.n8n.protocol .Values.n8n.host | quote }}
+            - name: N8N_INSTANCE_OWNER_MANAGED_BY_ENV
+              value: "true"
+            - name: N8N_INSTANCE_OWNER_EMAIL
+              value: {{ .Values.owner.email | quote }}
+            - name: N8N_INSTANCE_OWNER_FIRST_NAME
+              value: {{ .Values.owner.firstName | quote }}
+            - name: N8N_INSTANCE_OWNER_LAST_NAME
+              value: {{ .Values.owner.lastName | quote }}
+            - name: N8N_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "n8nforge.fullname" . }}-secrets
+                  key: N8N_ENCRYPTION_KEY
+            - name: N8N_USER_MANAGEMENT_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "n8nforge.fullname" . }}-secrets
+                  key: N8N_USER_MANAGEMENT_JWT_SECRET
+            - name: N8N_INSTANCE_OWNER_PASSWORD_HASH
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "n8nforge.fullname" . }}-secrets
+                  key: N8N_INSTANCE_OWNER_PASSWORD_HASH
+            - name: DB_TYPE
+              value: postgresdb
+            - name: DB_POSTGRESDB_HOST
+              value: {{ include "n8nforge.dbHost" . | quote }}
+            - name: DB_POSTGRESDB_PORT
+              value: {{ .Values.database.port | quote }}
+            - name: DB_POSTGRESDB_DATABASE
+              value: {{ .Values.database.name | quote }}
+            - name: DB_POSTGRESDB_USER
+              value: {{ .Values.database.user | quote }}
+            - name: DB_POSTGRESDB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "n8nforge.fullname" . }}-secrets
+                  key: DB_POSTGRESDB_PASSWORD
+            - name: N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS
+              value: "true"
+            - name: N8N_RUNNERS_ENABLED
+              value: "true"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 5678
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 5678
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.resources.n8n | nindent 12 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "n8nforge.fullname" . }}
+  labels:
+    {{- include "n8nforge.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: 5678
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "n8nforge.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: n8n

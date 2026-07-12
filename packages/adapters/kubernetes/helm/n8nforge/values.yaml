@@ -1,0 +1,68 @@
+replicaCount: 1
+
+image:
+  n8n:
+    repository: docker.n8n.io/n8nio/n8n
+    tag: "2.17.0"
+    pullPolicy: IfNotPresent
+  sidecar:
+    repository: ghcr.io/n8nforge/sidecar
+    tag: latest
+    pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: ClusterIP
+  port: 5678
+
+ingress:
+  enabled: false
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: n8n.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+owner:
+  email: admin@example.com
+  firstName: Admin
+  lastName: User
+  password: ""
+  passwordHash: ""
+
+secrets:
+  encryptionKey: ""
+  jwtSecret: ""
+
+database:
+  internal: true
+  host: ""
+  port: 5432
+  name: n8n
+  user: n8n
+  password: ""
+
+apiKeys:
+  - label: ci-deploy
+    scopes:
+      - workflow:read
+      - workflow:update
+      - workflow:activate
+
+n8n:
+  timezone: UTC
+  host: n8n.example.com
+  protocol: https
+
+resources:
+  n8n: {}
+  postgres: {}
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
