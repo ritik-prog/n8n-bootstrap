@@ -94,6 +94,7 @@ jobs:
       - name: Pre-boot bootstrap
         run: |
           cp examples/docker-local/.env.example examples/docker-local/.env
+          export $(grep -v '^#' examples/docker-local/.env | xargs)
           node packages/cli/dist/cli.js bootstrap --phase pre-boot \
             -f examples/docker-local/n8nforge.yaml
 
